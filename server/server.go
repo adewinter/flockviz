@@ -4,15 +4,17 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"io"
+	"net/http"
+	// "time"
 
 	"google.golang.org/grpc"
 
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/examples/data"
+	// "google.golang.org/grpc/credentials"
+	// "google.golang.org/grpc/examples/data"
 
 	// "github.com/golang/protobuf/proto"
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
 
 	pb "github.com/adewinter/flockviz-server/routeguide"
 )
@@ -62,29 +64,62 @@ func (rgServer *routeGuideServer) FlockTargetStream(streamRequestMessage *pb.Flo
 
 func main() {
 	flag.Parse()
-	fmt.Println("Server start on Port:", *port)
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
+	// fmt.Println("Server start on Port:", *port)
+	// lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
 
-	if err != nil {
-		log.Fatalf("Error opening listener. Err: %v", err)
-	}
+	// if err != nil {
+	// 	log.Fatalf("Error opening listener. Err: %v", err)
+	// }
 
 	var opts []grpc.ServerOption
-	if *tls {
-		if *certFile == "" {
-			*certFile = data.Path("x509/server_cert.pem")
-		}
-		if *keyFile == "" {
-			*keyFile = data.Path("x509/server_key.pem")
-		}
-		creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
-		if err != nil {
-			log.Fatalf("Failed to generate credentials %v", err)
-		}
-		opts = []grpc.ServerOption{grpc.Creds(creds)}
-	}
+	// if *tls {
+	// 	if *certFile == "" {
+	// 		*certFile = data.Path("x509/server_cert.pem")
+	// 	}
+	// 	if *keyFile == "" {
+	// 		*keyFile = data.Path("x509/server_key.pem")
+	// 	}
+	// 	creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
+	// 	if err != nil {
+	// 		log.Fatalf("Failed to generate credentials %v", err)
+	// 	}
+	// 	opts = []grpc.ServerOption{grpc.Creds(creds)}
+	// }
 	grpcServer := grpc.NewServer(opts...)
 
 	pb.RegisterRouteGuideServer(grpcServer, &routeGuideServer{})
-	grpcServer.Serve(lis)
+	wrappedGrpc := grpcweb.WrapServer(grpcServer)
+
+	// httpSrv := &http.Server{
+	// 	// These interfere with websocket streams, disable for now
+	// 	// ReadTimeout: 5 * time.Second,
+	// 	// WriteTimeout: 10 * time.Second,
+	// 	ReadHeaderTimeout: 5 * time.Second,
+	// 	IdleTimeout:       120 * time.Second,
+	// 	Addr:              ":https",
+	// 	// TLSConfig: &tls.Config{
+	// 	// 	PreferServerCipherSuites: true,
+	// 	// 	CurvePreferences: []tls.CurveID{
+	// 	// 		tls.CurveP256,
+	// 	// 		tls.X25519,
+	// 	// 	},
+	// 	// },
+	// 	Handler: ,
+	// }
+
+	foo := http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+		log.Println("Here?", req)
+		if wrappedGrpc.IsGrpcWebRequest(req) {
+			wrappedGrpc.ServeHTTP(resp, req)
+			return
+		}	
+		// Fall back to other servers.
+		http.DefaultServeMux.ServeHTTP(resp, req)
+	})
+
+	log.Println("Serving on https://localhost:10000")
+	log.Fatal(http.ListenAndServe(":10000", foo))
+
+	
+	// grpcServer.Serve(lis)
 }

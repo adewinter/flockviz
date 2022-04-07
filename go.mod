@@ -3,17 +3,21 @@ module github.com/adewinter/flockviz-server
 go 1.18
 
 require (
-	github.com/golang/protobuf v1.5.2
+	github.com/improbable-eng/grpc-web v0.15.0
 	google.golang.org/grpc v1.45.0
 	google.golang.org/grpc/examples v0.0.0-20220405220006-337b815c4150
 	google.golang.org/protobuf v1.27.1
-	rsc.io/quote v1.5.2
 )
 
 require (
-	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
-	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd // indirect
-	golang.org/x/text v0.3.0 // indirect
-	google.golang.org/genproto v0.0.0-20200806141610-86f49bd18e98 // indirect
-	rsc.io/sampler v1.3.0 // indirect
+	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
+	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/klauspost/compress v1.11.7 // indirect
+	github.com/rs/cors v1.7.0 // indirect
+	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
+	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
+	golang.org/x/text v0.3.6 // indirect
+	google.golang.org/genproto v0.0.0-20210126160654-44e461bb6506 // indirect
+	nhooyr.io/websocket v1.8.6 // indirect
 )
