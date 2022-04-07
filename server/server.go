@@ -48,8 +48,8 @@ func (rgServer *routeGuideServer) FlockTargetStream(streamRequestMessage *pb.Flo
 	fmt.Println("Sending Points:")
 	for i := 0; i < pointsToSend; i++ {
 		point := new(pb.Point)
-		point.Latitude = 1
-		point.Longitude = 1
+		point.Latitude = int32(i)
+		point.Longitude = int32(i)
 		fmt.Print(".")
 		targetStream.Send(point)
 	}
