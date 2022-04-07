@@ -3,20 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
-	"io"
-	"net/http"
-	// "time"
-
-	"google.golang.org/grpc"
-
-	// "google.golang.org/grpc/credentials"
-	// "google.golang.org/grpc/examples/data"
-
-	// "github.com/golang/protobuf/proto"
-	"github.com/improbable-eng/grpc-web/go/grpcweb"
-
 	pb "github.com/adewinter/flockviz-server/routeguide"
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"google.golang.org/grpc"
+	"io"
+	"log"
+	"net/http"
 )
 
 var (
@@ -53,66 +45,46 @@ func (rgServer *routeGuideServer) FlockTargetStream(streamRequestMessage *pb.Flo
 
 	// send a single point via the stream, could do this in a for loop for multiple points
 	pointsToSend := 100
+	fmt.Println("Sending Points:")
 	for i := 0; i < pointsToSend; i++ {
 		point := new(pb.Point)
 		point.Latitude = 1
 		point.Longitude = 1
+		fmt.Print(".")
 		targetStream.Send(point)
 	}
 	return nil
 }
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+func setupCorsResponse(w *http.ResponseWriter, req *http.Request) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, x-grpc-web, *")
+}
+
 func main() {
 	flag.Parse()
-	// fmt.Println("Server start on Port:", *port)
-	// lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
-
-	// if err != nil {
-	// 	log.Fatalf("Error opening listener. Err: %v", err)
-	// }
 
 	var opts []grpc.ServerOption
-	// if *tls {
-	// 	if *certFile == "" {
-	// 		*certFile = data.Path("x509/server_cert.pem")
-	// 	}
-	// 	if *keyFile == "" {
-	// 		*keyFile = data.Path("x509/server_key.pem")
-	// 	}
-	// 	creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
-	// 	if err != nil {
-	// 		log.Fatalf("Failed to generate credentials %v", err)
-	// 	}
-	// 	opts = []grpc.ServerOption{grpc.Creds(creds)}
-	// }
 	grpcServer := grpc.NewServer(opts...)
 
 	pb.RegisterRouteGuideServer(grpcServer, &routeGuideServer{})
 	wrappedGrpc := grpcweb.WrapServer(grpcServer)
 
-	// httpSrv := &http.Server{
-	// 	// These interfere with websocket streams, disable for now
-	// 	// ReadTimeout: 5 * time.Second,
-	// 	// WriteTimeout: 10 * time.Second,
-	// 	ReadHeaderTimeout: 5 * time.Second,
-	// 	IdleTimeout:       120 * time.Second,
-	// 	Addr:              ":https",
-	// 	// TLSConfig: &tls.Config{
-	// 	// 	PreferServerCipherSuites: true,
-	// 	// 	CurvePreferences: []tls.CurveID{
-	// 	// 		tls.CurveP256,
-	// 	// 		tls.X25519,
-	// 	// 	},
-	// 	// },
-	// 	Handler: ,
-	// }
-
 	foo := http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
-		log.Println("Here?", req)
+		setupCorsResponse(&resp, req)
+		if (*req).Method == "OPTIONS" {
+			return
+		}
+		enableCors(&resp)
 		if wrappedGrpc.IsGrpcWebRequest(req) {
 			wrappedGrpc.ServeHTTP(resp, req)
 			return
-		}	
+		}
 		// Fall back to other servers.
 		http.DefaultServeMux.ServeHTTP(resp, req)
 	})
@@ -120,6 +92,4 @@ func main() {
 	log.Println("Serving on https://localhost:10000")
 	log.Fatal(http.ListenAndServe(":10000", foo))
 
-	
-	// grpcServer.Serve(lis)
 }
