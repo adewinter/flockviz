@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "github.com/adewinter/flockviz_server/routeguide";
+
+package routeguide;
+
+service RouteGuide {
+	rpc UserClickStream(stream Point) returns (ClickSummary) {}
+	rpc FlockTargetStream(FlockTargetStreamRequest) returns (stream Point) {}
+}
+
+message FlockTargetStreamRequest {
+	int32 targetRatePerSecond = 1;
+	Point startingLocation = 2;
+}
+
+message Point {
+	int32 latitude = 1;
+	int32 longitude = 2;
+}
+
+message ClickSummary {
+	int32 status = 1;
+	string error = 2;
+}
